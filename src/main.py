@@ -34,7 +34,7 @@ def main(data_dir,
          torch_model,
          num_epochs=10,
          batch_size=50,
-         learning_rate=0.001,
+         learning_rate=0.01,
          train_criterion=torch.nn.CrossEntropyLoss,
          model_optimizer=torch.optim.Adam,
          data_augmentations=None,
@@ -153,15 +153,15 @@ if __name__ == '__main__':
     cmdline_parser = argparse.ArgumentParser('DL WS20/21 Competition')
 
     cmdline_parser.add_argument('-m', '--model',
-                                default='SmallCNN',
+                                default='SmallCNN4',
                                 help='Class name of model to train',
                                 type=str)
     cmdline_parser.add_argument('-e', '--epochs',
-                                default=50,
+                                default=15,
                                 help='Number of epochs',
                                 type=int)
     cmdline_parser.add_argument('-b', '--batch_size',
-                                default=282,
+                                default=20,
                                 help='Batch size',
                                 type=int)
     cmdline_parser.add_argument('-D', '--data_dir',
@@ -197,7 +197,7 @@ if __name__ == '__main__':
     # resize_and_colour_jitter
     # resize_to_128x128
     cmdline_parser.add_argument('-d', '--data-augmentation',
-                                default='resize_to_128x128',
+                                default='custom_augment',
                                 help='Data augmentation to apply to data before passing to the model.'
                                 + 'Must be available in data_augmentations.py')
     cmdline_parser.add_argument('-a', '--use-all-data-to-train',

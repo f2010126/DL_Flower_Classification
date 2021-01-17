@@ -52,3 +52,46 @@ class SmallCNN(nn.Module):
         x = F.relu(x)
         x = self.fc2(x)
         return x
+
+# python -m src.main --model SmallCNN2 --epochs 25
+class SmallCNN3(nn.Module):
+    def __init__(self, input_shape=(3, 128, 128), num_classes=10):
+        super(SmallCNN3, self).__init__()
+        self.conv1 = nn.Conv2d(in_channels=input_shape[0], out_channels=6, kernel_size=7, padding=0, stride=2)
+        self.conv2 = nn.Conv2d(in_channels=6, out_channels=16, kernel_size=5, stride=1, padding=0)
+        self.conv3 = nn.Conv2d(in_channels=16, out_channels=120, kernel_size=3, stride=1, padding=0)
+        self.pool = nn.MaxPool2d(2, 2)
+        self.fc1 = nn.Linear(3000, 128) # <--
+        self.fc2 = nn.Linear(128, num_classes)
+
+    def forward(self, x):
+        x = self.pool(F.relu(self.conv1(x)))
+        x = self.pool(F.relu(self.conv2(x)))
+        x = self.pool(F.relu(self.conv3(x)))
+        x = x.view(x.size(0), -1)
+        x = self.fc1(x)
+        x = F.relu(x)
+        x = self.fc2(x)
+        return x
+
+
+# 83k param 12.5% accuracy. :/
+class SmallCNN4(nn.Module):
+    def __init__(self, input_shape=(3, 128, 128), num_classes=10):
+        super(SmallCNN4, self).__init__()
+        self.conv1 = nn.Conv2d(in_channels=input_shape[0], out_channels=6, kernel_size=7, padding=0, stride=2)
+        self.conv2 = nn.Conv2d(in_channels=6, out_channels=16, kernel_size=5, stride=1, padding=0)
+        self.conv3 = nn.Conv2d(in_channels=16, out_channels=32, kernel_size=5, stride=1, padding=0)
+        self.pool = nn.MaxPool2d(2, 2)
+        self.fc1 = nn.Linear(512, 128) # <--
+        self.fc2 = nn.Linear(128, num_classes)
+
+    def forward(self, x):
+        x = self.pool(F.relu(self.conv1(x)))
+        x = self.pool(F.relu(self.conv2(x)))
+        x = self.pool(F.relu(self.conv3(x)))
+        x = x.view(x.size(0), -1)
+        x = self.fc1(x)
+        x = F.relu(x)
+        x = self.fc2(x)
+        return x
