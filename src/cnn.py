@@ -1,5 +1,5 @@
 """ File with CNN models. Add your custom CNN model here. """
-
+import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torchvision import models
@@ -29,8 +29,8 @@ class SampleModel(nn.Module):
         x = self.fc1(x)
         x = F.relu(x)
         x = self.fc2(x)
-
         return x
+
 
 class PreTrainedVGG(nn.Module):
 
@@ -40,11 +40,42 @@ class PreTrainedVGG(nn.Module):
         num_ftrs = self.vggnet.classifier[6].in_features
         self.vggnet.classifier[6] = nn.Linear(num_ftrs, num_classes)
 
-    # just in case
-    def set_parameter_requires_grad(self, model, feature_extracting):
-        if feature_extracting:
+    def forward(self, x):
+        return self.vggnet(x)
+
+
+class FeatureExtractedResnet(nn.Module):
+    def __init__(self, input_shape=(3, 224, 224), num_classes=10, extract_features=True):
+        super(FeatureExtractedResnet, self).__init__()
+        self.resnet = models.resnet18(pretrained=True)
+        self.extract_features = extract_features
+        self.disable_gradients(self.resnet)
+        num_ftrs = self.resnet.fc.in_features
+        self.resnet.fc = nn.Linear(num_ftrs, num_classes)
+
+    def disable_gradients(self, model) -> None:
+        """
+        Freezes the layers of a model
+        Args:
+            model: The model with the layers to freeze
+        Returns:
+            None
+        """
+        # Iterate over model parameters and disable requires_grad
+        # This is how we "freeze" these layers (their weights do no change during training)
+        if self.extract_features:
             for param in model.parameters():
                 param.requires_grad = False
 
-    def forward(self, x):
-        return self.vggnet(x)
+    def param_to_train(self):
+        params_to_update = []
+        if self.extract_features:
+            for name, param in self.resnet.named_parameters():
+                if param.requires_grad == True:
+                    params_to_update.append(param)
+        else:
+            params_to_update = self.resnet.parameters()
+        return params_to_update
+
+    def forward(self, x) -> torch.Tensor:
+        return self.resnet(x)

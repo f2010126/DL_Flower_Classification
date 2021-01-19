@@ -4,7 +4,7 @@ import logging
 import time
 import numpy as np
 
-import torch
+
 import torchvision.transforms as transforms
 from torch.utils.data import DataLoader, Subset, ConcatDataset
 from torchsummary import summary
@@ -17,6 +17,8 @@ from src.data_augmentations import *
 
 import matplotlib.pyplot as plt
 import torchvision
+import copy
+
 
 def imshow(inp, title=None):
     """Imshow for tensor"""
@@ -29,6 +31,7 @@ def imshow(inp, title=None):
     if title is not None:
         plt.title(title)
     plt.pause(0.001)
+
 
 def main(data_dir,
          torch_model,
@@ -66,6 +69,7 @@ def main(data_dir,
         raise NotImplementedError
 
     # Load the dataset
+    data_dir = data_dir + '/tiny'
     train_data = ImageFolder(os.path.join(data_dir, 'train'), transform=data_augmentations)
     val_data = ImageFolder(os.path.join(data_dir, 'val'), transform=data_augmentations)
     test_data = ImageFolder(os.path.join(data_dir, 'test'), transform=data_augmentations)
@@ -89,9 +93,8 @@ def main(data_dir,
                                   batch_size=batch_size,
                                   shuffle=True)
         val_loader = DataLoader(dataset=val_data,
-                                 batch_size=batch_size,
-                                 shuffle=False)
-
+                                batch_size=batch_size,
+                                shuffle=False)
 
     # Get a batch of training data
     inputs, classes = next(iter(train_loader))
@@ -102,8 +105,12 @@ def main(data_dir,
     model = torch_model(input_shape=input_shape,
                         num_classes=len(train_data.classes)).to(device)
 
+    # save best weights
+    best_model_wts = copy.deepcopy(model.state_dict())
+    best_score = 0.0
+    train_params = model.param_to_train()
     # instantiate optimizer
-    optimizer = model_optimizer(model.parameters(), lr=learning_rate)
+    optimizer = model_optimizer(train_params, lr=learning_rate)
 
     # Info about the model being trained
     # You can find the number of learnable parameters in the model here
@@ -119,10 +126,18 @@ def main(data_dir,
         train_score, train_loss = train_fn(model, optimizer, train_criterion, train_loader, device)
         logging.info('Train accuracy: %f', train_score)
 
+        # update weights for best accuracy
+        if train_score > best_score:
+            best_score = train_score
+            best_model_wts = copy.deepcopy(model.state_dict())
+
         if not use_all_data_to_train:
             test_score = eval_fn(model, val_loader, device)
             logging.info('Validation accuracy: %f', test_score)
             score.append(test_score)
+
+    # save best weighst to model
+    model.load_state_dict(best_model_wts)
 
     if save_model_str:
         # Save the model checkpoint can be restored via "model = torch.load(save_model_str)"
@@ -140,28 +155,27 @@ def main(data_dir,
         logging.info('Accuracy of model at final epoch: ' + str(100*score[-1])+'%')
 
 
-
 if __name__ == '__main__':
     """
     This is just an example of a training pipeline.
 
     Feel free to add or remove more arguments, change default values or hardcode parameters to use.
     """
-    loss_dict = {'cross_entropy': torch.nn.CrossEntropyLoss} # Feel free to add more
-    opti_dict = {'sgd': torch.optim.SGD, 'adam': torch.optim.Adam} # Feel free to add more
+    loss_dict = {'cross_entropy': torch.nn.CrossEntropyLoss}  # Feel free to add more
+    opti_dict = {'sgd': torch.optim.SGD, 'adam': torch.optim.Adam}  # Feel free to add more
 
     cmdline_parser = argparse.ArgumentParser('DL WS20/21 Competition')
 
     cmdline_parser.add_argument('-m', '--model',
-                                default='SmallCNN4',
+                                default='FeatureExtractedResnet',
                                 help='Class name of model to train',
                                 type=str)
     cmdline_parser.add_argument('-e', '--epochs',
-                                default=15,
+                                default=2,
                                 help='Number of epochs',
                                 type=int)
     cmdline_parser.add_argument('-b', '--batch_size',
-                                default=20,
+                                default=3,
                                 help='Batch size',
                                 type=int)
     cmdline_parser.add_argument('-D', '--data_dir',
@@ -197,7 +211,7 @@ if __name__ == '__main__':
     # resize_and_colour_jitter
     # resize_to_128x128
     cmdline_parser.add_argument('-d', '--data-augmentation',
-                                default='custom_augment',
+                                default='pretrain_augmentations',
                                 help='Data augmentation to apply to data before passing to the model.'
                                 + 'Must be available in data_augmentations.py')
     cmdline_parser.add_argument('-a', '--use-all-data-to-train',
