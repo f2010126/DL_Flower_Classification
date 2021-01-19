@@ -68,14 +68,27 @@ class FeatureExtractedResnet(nn.Module):
                 param.requires_grad = False
 
     def param_to_train(self):
+        """
+                Feature extraction
+                Args:
+                Returns:
+                    None
+        """
         params_to_update = []
         if self.extract_features:
             for name, param in self.resnet.named_parameters():
-                if param.requires_grad == True:
+                if param.requires_grad:
                     params_to_update.append(param)
         else:
             params_to_update = self.resnet.parameters()
         return params_to_update
 
     def forward(self, x) -> torch.Tensor:
+        """
+                Forward pass
+                Args:
+                    x: data
+                Returns:
+                    classification
+        """
         return self.resnet(x)

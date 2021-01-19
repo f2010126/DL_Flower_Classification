@@ -127,15 +127,14 @@ def main(data_dir,
         train_score, train_loss = train_fn(model, optimizer, train_criterion, train_loader, device)
         logging.info('Train accuracy: %f', train_score)
 
-        # update weights for best accuracy
-        if train_score > best_score:
-            best_score = train_score
-            best_model_wts = copy.deepcopy(model.state_dict())
-
         if not use_all_data_to_train:
             test_score = eval_fn(model, val_loader, device)
             logging.info('Validation accuracy: %f', test_score)
             score.append(test_score)
+            # update weights for best validation accuracy
+            if train_score > best_score:
+                best_score = train_score
+                best_model_wts = copy.deepcopy(model.state_dict())
 
     # save best weighst to model
     model.load_state_dict(best_model_wts)
