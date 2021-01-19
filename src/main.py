@@ -110,7 +110,8 @@ def main(data_dir,
     best_score = 0.0
     train_params = model.param_to_train()
     # instantiate optimizer
-    optimizer = model_optimizer(train_params, lr=learning_rate)
+    # optimizer = model_optimizer(train_params, lr=learning_rate)
+    optimizer = torch.optim.SGD(train_params, lr=0.001, momentum=0.9)
 
     # Info about the model being trained
     # You can find the number of learnable parameters in the model here
