@@ -44,9 +44,9 @@ class PreTrainedVGG(nn.Module):
         return self.vggnet(x)
 
 
-class FeatureExtractedResnet(nn.Module):
+class FeatExtResnet(nn.Module):
     def __init__(self, input_shape=(3, 224, 224), num_classes=10, extract_features=True):
-        super(FeatureExtractedResnet, self).__init__()
+        super(FeatExtResnet, self).__init__()
         self.resnet = models.resnet18(pretrained=True)
         self.extract_features = extract_features
         self.disable_gradients(self.resnet)
@@ -92,3 +92,58 @@ class FeatureExtractedResnet(nn.Module):
                     classification
         """
         return self.resnet(x)
+
+
+class FeatExtDenseNet(nn.Module):
+    def __init__(self, input_shape=(3, 224, 224), num_classes=10, extract_features=True):
+        super(FeatExtDenseNet, self).__init__()
+        self.densenet = models.densenet121(pretrained=True)
+        self.extract_features = extract_features
+        self.disable_gradients(self.densenet)
+        num_ftrs = self.densenet.classifier.in_features
+        self.densenet.classifier = nn.Linear(num_ftrs, num_classes)
+        # self.densenet.classifier = nn.Sequential(nn.Linear(1024, 256),
+        #                                          nn.ReLU(),
+        #                                          nn.Dropout(0.2),
+        #                                          nn.Linear(256, 10),
+        #                                          nn.LogSoftmax(dim=1))
+
+    def disable_gradients(self, model) -> None:
+        """
+        Freezes the layers of a model
+        Args:
+            model: The model with the layers to freeze
+        Returns:
+            None
+        """
+        # Iterate over model parameters and disable requires_grad
+        # This is how we "freeze" these layers (their weights do no change during training)
+        if self.extract_features:
+            for param in model.parameters():
+                param.requires_grad = False
+
+    def param_to_train(self):
+        """
+                Feature extraction
+                Args:
+                Returns:
+                    None
+        """
+        params_to_update = []
+        if self.extract_features:
+            for name, param in self.densenet.named_parameters():
+                if param.requires_grad:
+                    params_to_update.append(param)
+        else:
+            params_to_update = self.densenet.parameters()
+        return params_to_update
+
+    def forward(self, x) -> torch.Tensor:
+        """
+                Forward pass
+                Args:
+                    x: data
+                Returns:
+                    classification
+        """
+        return self.densenet(x)
