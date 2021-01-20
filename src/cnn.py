@@ -43,7 +43,7 @@ class PreTrainedVGG(nn.Module):
     def forward(self, x):
         return self.vggnet(x)
 
-
+# 11Million params
 class FeatExtResnet(nn.Module):
     def __init__(self, input_shape=(3, 224, 224), num_classes=10, extract_features=True):
         super(FeatExtResnet, self).__init__()
@@ -147,3 +147,104 @@ class FeatExtDenseNet(nn.Module):
                     classification
         """
         return self.densenet(x)
+
+# 128 million params Lol.NO
+# class FeatExtVGG(nn.Module):
+#     def __init__(self, input_shape=(3, 224, 224), num_classes=10, extract_features=True):
+#         super(FeatExtVGG, self).__init__()
+#         self.vgg = models.vgg11_bn(pretrained=True)
+#         self.extract_features = extract_features
+#         self.disable_gradients(self.vgg)
+#         num_ftrs = self.vgg.classifier[6].in_features
+#         self.vgg.classifier[6]=nn.Linear(num_ftrs, num_classes)
+#
+#     def disable_gradients(self, model) -> None:
+#         """
+#         Freezes the layers of a model
+#         Args:
+#             model: The model with the layers to freeze
+#         Returns:
+#             None
+#         """
+#         # Iterate over model parameters and disable requires_grad
+#         # This is how we "freeze" these layers (their weights do no change during training)
+#         if self.extract_features:
+#             for param in model.parameters():
+#                 param.requires_grad = False
+#
+#     def param_to_train(self):
+#         """
+#                 Feature extraction
+#                 Args:
+#                 Returns:
+#                     None
+#         """
+#         params_to_update = []
+#         if self.extract_features:
+#             for name, param in self.vgg.named_parameters():
+#                 if param.requires_grad:
+#                     params_to_update.append(param)
+#         else:
+#             params_to_update = self.vgg.parameters()
+#         return params_to_update
+#
+#     def forward(self, x) -> torch.Tensor:
+#         """
+#                 Forward pass
+#                 Args:
+#                     x: data
+#                 Returns:
+#                     classification
+#         """
+#         return self.vgg(x)
+
+
+# 722,496 params
+class FeatExtSqueeze(nn.Module):
+    def __init__(self, input_shape=(3, 224, 224), num_classes=10, extract_features=True):
+        super(FeatExtSqueeze, self).__init__()
+        self.squeeze = models.squeezenet1_1(True)
+        self.extract_features = extract_features
+        self.disable_gradients(self.squeeze)
+        self.squeeze.classifier[1] = nn.Conv2d(512, num_classes, kernel_size=(1,1), stride=(1,1))
+        self.squeeze.num_classes = num_classes
+
+    def disable_gradients(self, model) -> None:
+        """
+        Freezes the layers of a model
+        Args:
+            model: The model with the layers to freeze
+        Returns:
+            None
+        """
+        # Iterate over model parameters and disable requires_grad
+        # This is how we "freeze" these layers (their weights do no change during training)
+        if self.extract_features:
+            for param in model.parameters():
+                param.requires_grad = False
+
+    def param_to_train(self):
+        """
+                Feature extraction
+                Args:
+                Returns:
+                    None
+        """
+        params_to_update = []
+        if self.extract_features:
+            for name, param in self.squeeze.named_parameters():
+                if param.requires_grad:
+                    params_to_update.append(param)
+        else:
+            params_to_update = self.squeeze.parameters()
+        return params_to_update
+
+    def forward(self, x) -> torch.Tensor:
+        """
+                Forward pass
+                Args:
+                    x: data
+                Returns:
+                    classification
+        """
+        return self.squeeze(x)
