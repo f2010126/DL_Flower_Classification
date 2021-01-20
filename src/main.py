@@ -132,8 +132,8 @@ def main(data_dir,
             logging.info('Validation accuracy: %f', test_score)
             score.append(test_score)
             # update weights for best validation accuracy
-            if train_score > best_score:
-                best_score = train_score
+            if test_score > best_score:
+                best_score = test_score
                 best_model_wts = copy.deepcopy(model.state_dict())
 
     # save best weighst to model
