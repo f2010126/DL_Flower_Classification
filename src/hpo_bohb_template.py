@@ -1,11 +1,13 @@
 import os
 import pickle
-import time
+import torch.nn as nn
 import logging
 from pathlib import Path
+from typing import Tuple, Dict
 import hpbandster.core.nameserver as hpns
 import hpbandster.core.result as hpres
 from hpbandster.optimizers import BOHB
+import numpy as np
 from bohb_pytorch_worker import PyTorchWorker as worker
 logging.basicConfig(level=logging.DEBUG)
 
@@ -25,6 +27,56 @@ def save_result(filename: str, obj: object) -> None:
     # save the python objects as bytes
     with (save_path / f"{filename}.pkl").open('wb') as fh:
         pickle.dump(obj, fh)
+
+def load_result(filename: str) -> Dict[str, Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]]:
+    """Load object from pickled file.
+
+    Args:
+        filename: Name of file in ./results directory to load.
+
+    """
+    with (Path("results") / f"{filename}.pkl").open('rb') as fh:
+        return pickle.load(fh)
+
+def best_model_bohb(results: hpres.Result) -> Tuple[float, int, nn.Module]:
+    """ Compute the model of the best run, evaluated on the largest budget,
+        with it's final validation error.
+
+    Args:
+        result: Hpbandster result object.
+
+    Returns:
+        best error, best configuration id and best configuration
+
+    """
+    inc_id = results.get_incumbent_id()  # get config_id of incumbent (lowest loss)
+    # START TODO #################
+    id2conf = results.get_id2config_mapping()
+    inc_runs = results.get_runs_by_id(inc_id)
+    inc_run = inc_runs[-1]
+
+    best_error = inc_run.loss
+    best_configuration = id2conf[inc_id]['config']
+    # END TODO ###################
+
+    return best_error, inc_id, best_configuration
+
+def evaluate(results: hpres.Result) -> None:
+    """Evaluate the results from the bohb run.
+
+    Args:
+        result: Hpbandster structure results
+
+    Returns:
+        None
+    """
+    # Look for the best model and print it
+    best_error, best_config_id, best_config = best_model_bohb(results)
+    print("The best model (config_id {}) has the lowest final error with {:.4f}."
+          .format(best_config_id, best_error))
+    print(f"The best configuration {best_config}")
+
+
 
 
 def setup_bohb():
@@ -66,3 +118,6 @@ def setup_bohb():
 
 if __name__ == '__main__':
     setup_bohb()
+    results = load_result('bohb_result')
+    evaluate(results)
+
