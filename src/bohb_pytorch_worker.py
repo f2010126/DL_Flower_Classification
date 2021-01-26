@@ -53,12 +53,17 @@ class PyTorchWorker(Worker):
         cs = CS.ConfigurationSpace(seed=0)
         # START TODO ################
         lr_hp = CS.UniformFloatHyperparameter('lr', lower=1e-6, upper=1e-1, default_value=1e-2, log=True)
-        optimizer_hp = CSH.CategoricalHyperparameter(name='optimizer', choices=['Adam', 'SGD'])
+        optimizer_hp = CSH.CategoricalHyperparameter(name='optimizer', choices=['Adam', 'SGD','RMSprop'])
         sgd_momentum_hp = CS.UniformFloatHyperparameter('sgd_momentum', lower=0.00, upper=0.99, default_value=0.9)
 
+        rms_momentum_hp = CS.UniformFloatHyperparameter('rms_momentum', lower=0.00, upper=0.99, default_value=0.9)
+        rms_alpha_hp = CS.UniformFloatHyperparameter('rms_alpha', lower=0.00, upper=0.99, default_value=0.99)
+
         sgd_cond = CS.EqualsCondition(sgd_momentum_hp, optimizer_hp, 'SGD')
-        cs.add_hyperparameters([lr_hp, optimizer_hp, sgd_momentum_hp])
-        cs.add_conditions([sgd_cond])
+        rms_cond1 = CS.EqualsCondition(rms_momentum_hp, optimizer_hp, 'RMSprop')
+        rms_cond2 = CS.EqualsCondition(rms_alpha_hp, optimizer_hp, 'RMSprop')
+        cs.add_hyperparameters([lr_hp, optimizer_hp, sgd_momentum_hp,rms_momentum_hp, rms_alpha_hp])
+        cs.add_conditions([sgd_cond, rms_cond1, rms_cond2])
         # END TODO ################
         return cs
 
@@ -112,6 +117,9 @@ class PyTorchWorker(Worker):
         # TODO: play with this
         if config['optimizer'] == 'Adam':
             optimizer = torch.optim.Adam(train_params, lr=config['lr'])
+        elif config['optimizer'] == 'RMSprop':
+            optimizer = torch.optim.RMSprop(train_params,lr=config['lr'], momentum=config['rms_momentum'],
+                                            alpha=config['rms_alpha'] )
         else:
             optimizer = torch.optim.SGD(train_params, lr=config['lr'], momentum=config['sgd_momentum'])
 
