@@ -2,12 +2,12 @@ import os
 import pickle
 import time
 import logging
-logging.basicConfig(level=logging.DEBUG)
 from pathlib import Path
 import hpbandster.core.nameserver as hpns
 import hpbandster.core.result as hpres
 from hpbandster.optimizers import BOHB
 from bohb_pytorch_worker import PyTorchWorker as worker
+logging.basicConfig(level=logging.DEBUG)
 
 
 def save_result(filename: str, obj: object) -> None:

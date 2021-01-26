@@ -29,11 +29,9 @@ pretrain_augmentations = transforms.Compose([
                          std=[0.229, 0.224, 0.225])
 ])
 
-
 pretrain_augmentations_alt = transforms.Compose([transforms.Resize((224, 224)),
-                                                 transforms.Normalize(mean=[0.4920, 0.4749,  0.3117],
+                                                 transforms.Normalize(mean=[0.4920, 0.4749, 0.3117],
                                                                       std=[0.2767, 0.2526, 0.2484])])
-
 
 # val_transform = transforms.Compose([
 #         transforms.Resize(args.test_image_size),

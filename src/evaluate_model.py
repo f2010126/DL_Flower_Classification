@@ -19,7 +19,8 @@ if __name__ == '__main__':
 
     parser.add_argument('-p', '--saved-model-file',
                         default='sample_model',
-                        help='Name of file inside models directory which contains the saved weights of the trained model',
+                        help='Name of file inside models directory which contains the saved weights of the trained '
+                             'model',
                         type=str)
 
     parser.add_argument('-D', '--test-data-dir',

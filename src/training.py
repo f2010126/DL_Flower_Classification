@@ -5,6 +5,7 @@ import numpy as np
 
 from src.eval.evaluate import AverageMeter, accuracy
 
+
 def train_fn(model, optimizer, criterion, loader, device, train=True):
     """
   Training method

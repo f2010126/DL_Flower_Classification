@@ -1,4 +1,7 @@
 import os
+from src.cnn import *
+from src.data_augmentations import *
+import torchvision
 import argparse
 import logging
 import time
@@ -8,23 +11,19 @@ import logging
 from torchsummary import summary
 import ConfigSpace as CS
 import ConfigSpace.hyperparameters as CSH
+from torch.utils.data import DataLoader, Subset, ConcatDataset
+from torchvision.datasets import ImageFolder
+from hpbandster.core.worker import Worker
 
 logging.basicConfig(level=logging.DEBUG)
 
-from src.cnn import *
-from src.data_augmentations import *
-import torchvision
-
-from torch.utils.data import DataLoader, Subset, ConcatDataset
-from torchvision.datasets import ImageFolder
-
-from hpbandster.core.worker import Worker
 
 if torch.cuda.is_available():
     device = torch.device("cuda")
 else:
     device = torch.device("cpu")
 print(f"Running on device: {device}")
+
 
 class PyTorchWorker(Worker):
     def __init__(self, **kwargs):
@@ -78,7 +77,7 @@ class PyTorchWorker(Worker):
 
     def compute(self, config, budget, working_directory, *args, **kwargs):
         # Load the dataset
-        data_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)),'..', 'dataset') + '/tiny'
+        data_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'dataset') + '/tiny'
         train_data = ImageFolder(os.path.join(data_dir, 'train'), transform=resize_and_colour_jitter)
         val_data = ImageFolder(os.path.join(data_dir, 'val'), transform=resize_and_colour_jitter)
         test_data = ImageFolder(os.path.join(data_dir, 'test'), transform=resize_and_colour_jitter)
@@ -93,7 +92,7 @@ class PyTorchWorker(Worker):
 
         # not usin all data to train
         # TODO: adjust this
-        batch_size = 50 # change this
+        batch_size = 50  # change this
         train_loader = DataLoader(dataset=train_data,
                                   batch_size=batch_size,
                                   shuffle=True)
@@ -102,14 +101,14 @@ class PyTorchWorker(Worker):
                                 shuffle=False)
         # TODO: get actual test data
         test_loader = DataLoader(dataset=val_data,
-                                batch_size=batch_size,
-                                shuffle=True)
+                                 batch_size=batch_size,
+                                 shuffle=True)
 
         # make a model yes, doing feature extraction here
         # TODO: play with the model
         model = SampleModel(input_shape=input_shape,
-                        num_classes=len(train_data.classes)).to(device)
-        train_params = model.parameters() #model.param_to_train()
+                            num_classes=len(train_data.classes)).to(device)
+        train_params = model.parameters()  # model.param_to_train()
         # TODO: play with this
         if config['optimizer'] == 'Adam':
             optimizer = torch.optim.Adam(train_params, lr=config['lr'])
@@ -135,5 +134,5 @@ class PyTorchWorker(Worker):
             'info': {'test accuracy': test_accuracy,
                      'train accuracy': train_accuracy,
                      'validation accuracy': validation_accuracy,
-                     'model': str(model),}
+                     'model': str(model), }
         })

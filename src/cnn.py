@@ -10,6 +10,7 @@ class SampleModel(nn.Module):
     """
     A sample PyTorch CNN model
     """
+
     def __init__(self, input_shape=(3, 64, 64), num_classes=10):
         super(SampleModel, self).__init__()
         self.conv1 = nn.Conv2d(in_channels=input_shape[0], out_channels=10, kernel_size=(3, 3), padding=(1, 1))
@@ -43,6 +44,7 @@ class PreTrainedVGG(nn.Module):
 
     def forward(self, x):
         return self.vggnet(x)
+
 
 # 11Million params
 class FeatExtResnet(nn.Module):
@@ -93,6 +95,7 @@ class FeatExtResnet(nn.Module):
                     classification
         """
         return self.resnet(x)
+
 
 class FeatExtDenseNet(nn.Module):
     def __init__(self, input_shape=(3, 224, 224), num_classes=10, extract_features=True):
@@ -148,13 +151,14 @@ class FeatExtDenseNet(nn.Module):
         """
         return self.densenet(x)
 
+
 class FeatExtSqueeze(nn.Module):
     def __init__(self, input_shape=(3, 224, 224), num_classes=10, extract_features=True):
         super(FeatExtSqueeze, self).__init__()
         self.squeeze = models.squeezenet1_1(True)
         self.extract_features = extract_features
         self.disable_gradients(self.squeeze)
-        self.squeeze.classifier[1] = nn.Conv2d(512, num_classes, kernel_size=(1,1), stride=(1,1))
+        self.squeeze.classifier[1] = nn.Conv2d(512, num_classes, kernel_size=(1, 1), stride=(1, 1))
         self.squeeze.num_classes = num_classes
 
     def disable_gradients(self, model) -> None:
@@ -197,17 +201,18 @@ class FeatExtSqueeze(nn.Module):
         """
         return self.squeeze(x)
 
+
 class FeatExtEfficientNet(nn.Module):
 
-  def __init__(self, input_shape=(3, 224, 224), num_classes=10, extract_features=True):
-    super(FeatExtEfficientNet,self).__init__()
-    self.efficient = EfficientNet.from_name('efficientnet-b1')
-    self.extract_features = extract_features
-    self.disable_gradients(self.efficient)
-    num_ftrs = self.efficient._fc.in_features
-    self.efficient._fc = nn.Linear(num_ftrs, num_classes)
+    def __init__(self, input_shape=(3, 224, 224), num_classes=10, extract_features=True):
+        super(FeatExtEfficientNet, self).__init__()
+        self.efficient = EfficientNet.from_name('efficientnet-b1')
+        self.extract_features = extract_features
+        self.disable_gradients(self.efficient)
+        num_ftrs = self.efficient._fc.in_features
+        self.efficient._fc = nn.Linear(num_ftrs, num_classes)
 
-  def disable_gradients(self, model) -> None:
+    def disable_gradients(self, model) -> None:
         """
         Freezes the layers of a model
         Args:
@@ -221,7 +226,7 @@ class FeatExtEfficientNet(nn.Module):
             for param in model.parameters():
                 param.requires_grad = False
 
-  def param_to_train(self):
+    def param_to_train(self):
         """
                 Feature extraction
                 Args:
@@ -237,8 +242,7 @@ class FeatExtEfficientNet(nn.Module):
             params_to_update = self.efficient.parameters()
         return params_to_update
 
-
-  def forward(self, x) -> torch.Tensor:
+    def forward(self, x) -> torch.Tensor:
         """
                 Forward pass
                 Args:
@@ -247,6 +251,7 @@ class FeatExtEfficientNet(nn.Module):
                     classification
         """
         return self.efficient(x)
+
 
 # 5 million
 class FeatExtGoogLeNet(nn.Module):
@@ -298,9 +303,10 @@ class FeatExtGoogLeNet(nn.Module):
         """
         return self.google(x)
 
+
 # 24 million
 class FeatExtInception(nn.Module):
-    def __init__(self, input_shape=(3, 299,299), num_classes=10, extract_features=True):
+    def __init__(self, input_shape=(3, 299, 299), num_classes=10, extract_features=True):
         super(FeatExtInception, self).__init__()
         self.inception = models.inception_v3(pretrained=True)
         self.extract_features = extract_features
@@ -351,6 +357,7 @@ class FeatExtInception(nn.Module):
         """
         return self.inception(x)
 
+
 # 1.26million
 class FeatExtShuffleNet(nn.Module):
     def __init__(self, input_shape=(3, 224, 224), num_classes=10, extract_features=True):
@@ -400,4 +407,3 @@ class FeatExtShuffleNet(nn.Module):
                     classification
         """
         return self.shuffle(x)
-
