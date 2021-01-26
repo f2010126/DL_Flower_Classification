@@ -3,6 +3,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torchvision import models
+from efficientnet_pytorch import EfficientNet
 
 
 class SampleModel(nn.Module):
@@ -93,7 +94,6 @@ class FeatExtResnet(nn.Module):
         """
         return self.resnet(x)
 
-
 class FeatExtDenseNet(nn.Module):
     def __init__(self, input_shape=(3, 224, 224), num_classes=10, extract_features=True):
         super(FeatExtDenseNet, self).__init__()
@@ -148,58 +148,6 @@ class FeatExtDenseNet(nn.Module):
         """
         return self.densenet(x)
 
-# 128 million params Lol.NO
-# class FeatExtVGG(nn.Module):
-#     def __init__(self, input_shape=(3, 224, 224), num_classes=10, extract_features=True):
-#         super(FeatExtVGG, self).__init__()
-#         self.vgg = models.vgg11_bn(pretrained=True)
-#         self.extract_features = extract_features
-#         self.disable_gradients(self.vgg)
-#         num_ftrs = self.vgg.classifier[6].in_features
-#         self.vgg.classifier[6]=nn.Linear(num_ftrs, num_classes)
-#
-#     def disable_gradients(self, model) -> None:
-#         """
-#         Freezes the layers of a model
-#         Args:
-#             model: The model with the layers to freeze
-#         Returns:
-#             None
-#         """
-#         # Iterate over model parameters and disable requires_grad
-#         # This is how we "freeze" these layers (their weights do no change during training)
-#         if self.extract_features:
-#             for param in model.parameters():
-#                 param.requires_grad = False
-#
-#     def param_to_train(self):
-#         """
-#                 Feature extraction
-#                 Args:
-#                 Returns:
-#                     None
-#         """
-#         params_to_update = []
-#         if self.extract_features:
-#             for name, param in self.vgg.named_parameters():
-#                 if param.requires_grad:
-#                     params_to_update.append(param)
-#         else:
-#             params_to_update = self.vgg.parameters()
-#         return params_to_update
-#
-#     def forward(self, x) -> torch.Tensor:
-#         """
-#                 Forward pass
-#                 Args:
-#                     x: data
-#                 Returns:
-#                     classification
-#         """
-#         return self.vgg(x)
-
-
-# 722,496 params
 class FeatExtSqueeze(nn.Module):
     def __init__(self, input_shape=(3, 224, 224), num_classes=10, extract_features=True):
         super(FeatExtSqueeze, self).__init__()
@@ -248,3 +196,208 @@ class FeatExtSqueeze(nn.Module):
                     classification
         """
         return self.squeeze(x)
+
+class FeatExtEfficientNet(nn.Module):
+
+  def __init__(self, input_shape=(3, 224, 224), num_classes=10, extract_features=True):
+    super(FeatExtEfficientNet,self).__init__()
+    self.efficient = EfficientNet.from_name('efficientnet-b1')
+    self.extract_features = extract_features
+    self.disable_gradients(self.efficient)
+    num_ftrs = self.efficient._fc.in_features
+    self.efficient._fc = nn.Linear(num_ftrs, num_classes)
+
+  def disable_gradients(self, model) -> None:
+        """
+        Freezes the layers of a model
+        Args:
+            model: The model with the layers to freeze
+        Returns:
+            None
+        """
+        # Iterate over model parameters and disable requires_grad
+        # This is how we "freeze" these layers (their weights do no change during training)
+        if self.extract_features:
+            for param in model.parameters():
+                param.requires_grad = False
+
+  def param_to_train(self):
+        """
+                Feature extraction
+                Args:
+                Returns:
+                    None
+        """
+        params_to_update = []
+        if self.extract_features:
+            for name, param in self.efficient.named_parameters():
+                if param.requires_grad:
+                    params_to_update.append(param)
+        else:
+            params_to_update = self.efficient.parameters()
+        return params_to_update
+
+
+  def forward(self, x) -> torch.Tensor:
+        """
+                Forward pass
+                Args:
+                    x: data
+                Returns:
+                    classification
+        """
+        return self.efficient(x)
+
+# 5 million
+class FeatExtGoogLeNet(nn.Module):
+    def __init__(self, input_shape=(3, 224, 224), num_classes=10, extract_features=True):
+        super(FeatExtGoogLeNet, self).__init__()
+        self.google = models.googlenet(pretrained=True)
+        self.extract_features = extract_features
+        self.disable_gradients(self.google)
+        num_ftrs = self.google.fc.in_features
+        self.google.fc = nn.Linear(num_ftrs, num_classes)
+
+    def disable_gradients(self, model) -> None:
+        """
+        Freezes the layers of a model
+        Args:
+            model: The model with the layers to freeze
+        Returns:
+            None
+        """
+        # Iterate over model parameters and disable requires_grad
+        # This is how we "freeze" these layers (their weights do no change during training)
+        if self.extract_features:
+            for param in model.parameters():
+                param.requires_grad = False
+
+    def param_to_train(self):
+        """
+                Feature extraction
+                Args:
+                Returns:
+                    None
+        """
+        params_to_update = []
+        if self.extract_features:
+            for name, param in self.google.named_parameters():
+                if param.requires_grad:
+                    params_to_update.append(param)
+        else:
+            params_to_update = self.google.parameters()
+        return params_to_update
+
+    def forward(self, x) -> torch.Tensor:
+        """
+                Forward pass
+                Args:
+                    x: data
+                Returns:
+                    classification
+        """
+        return self.google(x)
+
+# 24 million
+class FeatExtInception(nn.Module):
+    def __init__(self, input_shape=(3, 299,299), num_classes=10, extract_features=True):
+        super(FeatExtInception, self).__init__()
+        self.inception = models.inception_v3(pretrained=True)
+        self.extract_features = extract_features
+        self.disable_gradients(self.inception)
+        num_ftrs = self.inception.AuxLogits.fc.in_features
+        self.inception.AuxLogits.fc = nn.Linear(num_ftrs, num_classes)
+        # Handle the primary net
+        num_ftrs = self.inception.fc.in_features
+        self.inception.fc = nn.Linear(num_ftrs, num_classes)
+
+    def disable_gradients(self, model) -> None:
+        """
+        Freezes the layers of a model
+        Args:
+            model: The model with the layers to freeze
+        Returns:
+            None
+        """
+        # Iterate over model parameters and disable requires_grad
+        # This is how we "freeze" these layers (their weights do no change during training)
+        if self.extract_features:
+            for param in model.parameters():
+                param.requires_grad = False
+
+    def param_to_train(self):
+        """
+                Feature extraction
+                Args:
+                Returns:
+                    None
+        """
+        params_to_update = []
+        if self.extract_features:
+            for name, param in self.inception.named_parameters():
+                if param.requires_grad:
+                    params_to_update.append(param)
+        else:
+            params_to_update = self.inception.parameters()
+        return params_to_update
+
+    def forward(self, x) -> torch.Tensor:
+        """
+                Forward pass
+                Args:
+                    x: data
+                Returns:
+                    classification
+        """
+        return self.inception(x)
+
+# 1.26million
+class FeatExtShuffleNet(nn.Module):
+    def __init__(self, input_shape=(3, 224, 224), num_classes=10, extract_features=True):
+        super(FeatExtShuffleNet, self).__init__()
+        self.shuffle = models.shufflenet_v2_x1_0(pretrained=True)
+        self.extract_features = extract_features
+        self.disable_gradients(self.shuffle)
+        num_ftrs = self.shuffle.fc.in_features
+        self.shuffle.fc = nn.Linear(num_ftrs, num_classes)
+
+    def disable_gradients(self, model) -> None:
+        """
+        Freezes the layers of a model
+        Args:
+            model: The model with the layers to freeze
+        Returns:
+            None
+        """
+        # Iterate over model parameters and disable requires_grad
+        # This is how we "freeze" these layers (their weights do no change during training)
+        if self.extract_features:
+            for param in model.parameters():
+                param.requires_grad = False
+
+    def param_to_train(self):
+        """
+                Feature extraction
+                Args:
+                Returns:
+                    None
+        """
+        params_to_update = []
+        if self.extract_features:
+            for name, param in self.shuffle.named_parameters():
+                if param.requires_grad:
+                    params_to_update.append(param)
+        else:
+            params_to_update = self.shuffle.parameters()
+        return params_to_update
+
+    def forward(self, x) -> torch.Tensor:
+        """
+                Forward pass
+                Args:
+                    x: data
+                Returns:
+                    classification
+        """
+        return self.shuffle(x)
+
