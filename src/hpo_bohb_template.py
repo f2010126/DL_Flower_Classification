@@ -9,6 +9,7 @@ import hpbandster.core.result as hpres
 from hpbandster.optimizers import BOHB
 import numpy as np
 from bohb_pytorch_worker import PyTorchWorker as worker
+from src.cnn import *
 logging.basicConfig(level=logging.DEBUG)
 
 
@@ -28,6 +29,7 @@ def save_result(filename: str, obj: object) -> None:
     with (save_path / f"{filename}.pkl").open('wb') as fh:
         pickle.dump(obj, fh)
 
+
 def load_result(filename: str) -> Dict[str, Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]]:
     """Load object from pickled file.
 
@@ -37,6 +39,7 @@ def load_result(filename: str) -> Dict[str, Tuple[np.ndarray, np.ndarray, np.nda
     """
     with (Path("results") / f"{filename}.pkl").open('rb') as fh:
         return pickle.load(fh)
+
 
 def best_model_bohb(results: hpres.Result) -> Tuple[float, int, nn.Module]:
     """ Compute the model of the best run, evaluated on the largest budget,
@@ -61,6 +64,7 @@ def best_model_bohb(results: hpres.Result) -> Tuple[float, int, nn.Module]:
 
     return best_error, inc_id, best_configuration
 
+
 def evaluate(results: hpres.Result) -> None:
     """Evaluate the results from the bohb run.
 
@@ -77,9 +81,7 @@ def evaluate(results: hpres.Result) -> None:
     print(f"The best configuration {best_config}")
 
 
-
-
-def setup_bohb():
+def setup_bohb(model):
     # TODO: get it to look like the assignment
     run_id = 'bohb_template'
     # Every process has to lookup the hostname
@@ -104,7 +106,7 @@ def setup_bohb():
                 )
     try:
         # Start local worker
-        w = worker(run_id=run_id, host=host, nameserver=ns_host,
+        w = worker(model=model, run_id=run_id, host=host, nameserver=ns_host,
                    nameserver_port=ns_port, timeout=120)
         w.run(background=True)
         # Run an optimize
@@ -117,7 +119,7 @@ def setup_bohb():
 
 
 if __name__ == '__main__':
-    setup_bohb()
+    run_model = 'SampleModel'  # <--- Change model from here
+    setup_bohb(eval(run_model))
     results = load_result('bohb_result')
     evaluate(results)
-

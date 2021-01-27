@@ -26,9 +26,10 @@ print(f"Running on device: {device}")
 
 
 class PyTorchWorker(Worker):
-    def __init__(self, **kwargs):
+    def __init__(self, model, **kwargs):
         super().__init__(**kwargs)
         # load dataset here, do the batching a bit later? I want batch as an HP
+        self.model = model
 
     @staticmethod
     def get_configspace() -> CS.Configuration:
@@ -111,7 +112,7 @@ class PyTorchWorker(Worker):
 
         # make a model yes, doing feature extraction here
         # TODO: play with the model
-        model = SampleModel(input_shape=input_shape,
+        model = self.model(input_shape=input_shape,
                             num_classes=len(train_data.classes)).to(device)
         train_params = model.parameters()  # model.param_to_train()
         # TODO: play with this
