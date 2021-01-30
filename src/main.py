@@ -167,7 +167,7 @@ if __name__ == '__main__':
     cmdline_parser = argparse.ArgumentParser('DL WS20/21 Competition')
 
     cmdline_parser.add_argument('-m', '--model',
-                                default='FeatExtGoogLeNet',
+                                default='FeatExtEfficientNet',
                                 help='Class name of model to train',
                                 type=str)
     cmdline_parser.add_argument('-e', '--epochs',
@@ -211,7 +211,7 @@ if __name__ == '__main__':
     # resize_and_colour_jitter
     # resize_to_128x128
     cmdline_parser.add_argument('-d', '--data-augmentation',
-                                default='inception_augmentations',
+                                default='efficientnet_augmentations',
                                 help='Data augmentation to apply to data before passing to the model.'
                                 + 'Must be available in data_augmentations.py')
     cmdline_parser.add_argument('-a', '--use-all-data-to-train',

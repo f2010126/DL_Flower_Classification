@@ -36,7 +36,7 @@ class SampleModel(nn.Module):
 
 class PreTrainedVGG(nn.Module):
 
-    def __init__(self, num_classes=10):
+    def __init__(self, input_shape=(3, 224, 224), num_classes=10):
         super(PreTrainedVGG, self).__init__()
         self.vggnet = models.vgg16(pretrained=True)
         num_ftrs = self.vggnet.classifier[6].in_features
@@ -206,11 +206,14 @@ class FeatExtEfficientNet(nn.Module):
 
     def __init__(self, input_shape=(3, 224, 224), num_classes=10, extract_features=True):
         super(FeatExtEfficientNet, self).__init__()
-        self.efficient = EfficientNet.from_name('efficientnet-b1')
+        self.efficient = EfficientNet.from_pretrained('efficientnet-b0')
         self.extract_features = extract_features
-        self.disable_gradients(self.efficient)
-        num_ftrs = self.efficient._fc.in_features
-        self.efficient._fc = nn.Linear(num_ftrs, num_classes)
+        # feat ext
+        # self.disable_gradients(self.efficient)
+        self.l1 = nn.Linear(1000, 256)
+        self.dropout = nn.Dropout(0.5)
+        self.l2 = nn.Linear(256, num_classes)  # 6 is number of classes
+        self.relu = nn.LeakyReLU()
 
     def disable_gradients(self, model) -> None:
         """
@@ -250,7 +253,11 @@ class FeatExtEfficientNet(nn.Module):
                 Returns:
                     classification
         """
-        return self.efficient(x)
+        x = self.efficient(x)
+        x = x.view(x.size(0), -1) # flatten
+        x = self.dropout(self.relu(self.l1(x)))
+        x = self.l2(x)
+        return x
 
 
 # 5 million
