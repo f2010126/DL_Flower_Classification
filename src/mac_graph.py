@@ -24,7 +24,7 @@ class MacroGraph(nn.Module):
         self.max3x3 = nn.MaxPool2d(kernel_size=3, stride=1)
         self.a2 = CellA(config_cell_a)
         self.b2 = CellB(config_cell_b)
-        self.fc = nn.Linear(10*295*295, 10)  # o/p 10 classes <-- check that
+        self.fc = nn.Linear(10*124*124, 10)  # o/p 10 classes <-- check that
         # END TODO #################
 
     def forward(self, x):
