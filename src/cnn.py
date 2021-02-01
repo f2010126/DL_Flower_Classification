@@ -267,6 +267,8 @@ class FeatExtGoogLeNet(nn.Module):
         self.google = models.googlenet(pretrained=True)
         self.extract_features = extract_features
         self.disable_gradients(self.google)
+        self.google.aux_logits = False
+        # Handle the primary net
         num_ftrs = self.google.fc.in_features
         self.google.fc = nn.Linear(num_ftrs, num_classes)
 
