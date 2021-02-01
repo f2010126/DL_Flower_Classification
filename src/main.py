@@ -17,6 +17,10 @@ from src.data_augmentations import *
 
 import matplotlib.pyplot as plt
 import torchvision
+import copy
+
+from cell import *
+from mac_graph import *
 
 def imshow(inp, title=None):
     """Imshow for tensor"""
@@ -29,6 +33,19 @@ def imshow(inp, title=None):
     if title is not None:
         plt.title(title)
     plt.pause(0.001)
+
+def set_mac_graph():
+    cell_a_space = CellA.get_configuration_space()
+    cell_b_space = CellB.get_configuration_space()
+    config_a = cell_a_space.sample_configuration()
+    config_b = cell_b_space.sample_configuration()
+    model = MacroGraph(config_a, config_b)
+    return model
+
+
+
+
+
 
 def main(data_dir,
          torch_model,
@@ -99,17 +116,21 @@ def main(data_dir,
     out = torchvision.utils.make_grid(inputs)
     imshow(out, title=[train_data.classes[x] for x in classes])
 
-    model = torch_model(input_shape=input_shape,
-                        num_classes=len(train_data.classes)).to(device)
+    model = set_mac_graph()
+    # model = torch_model(input_shape=input_shape,
+    #                     num_classes=len(train_data.classes)).to(device)
 
     # instantiate optimizer
-    optimizer = model_optimizer(model.parameters(), lr=learning_rate)
+    # optimizer = model_optimizer(train_params, lr=learning_rate)
+    optimizer = torch.optim.SGD(train_params, lr=0.001, momentum=0.9,weight_decay=5e-4)
+    # TODO: check scheduler options
+    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=200)
 
     # Info about the model being trained
     # You can find the number of learnable parameters in the model here
     logging.info('Model being trained:')
-    summary(model, input_shape,
-            device='cuda' if torch.cuda.is_available() else 'cpu')
+    # summary(model, input_shape,
+    #         device='cuda' if torch.cuda.is_available() else 'cpu')
 
     # Train the model
     for epoch in range(num_epochs):
@@ -123,6 +144,14 @@ def main(data_dir,
             test_score = eval_fn(model, val_loader, device)
             logging.info('Validation accuracy: %f', test_score)
             score.append(test_score)
+            # update weights for best validation accuracy
+            if test_score > best_score:
+                best_score = test_score
+                best_model_wts = copy.deepcopy(model.state_dict())
+        # TODO: set the values
+        scheduler.step()
+    # save best weighst to model
+    model.load_state_dict(best_model_wts)
 
     if save_model_str:
         # Save the model checkpoint can be restored via "model = torch.load(save_model_str)"
