@@ -60,11 +60,19 @@ class PyTorchWorker(Worker):
         rms_momentum_hp = CS.UniformFloatHyperparameter('rms_momentum', lower=0.00, upper=0.99, default_value=0.9)
         rms_alpha_hp = CS.UniformFloatHyperparameter('rms_alpha', lower=0.00, upper=0.99, default_value=0.99)
 
+        scheduler_hp = CSH.CategoricalHyperparameter(name='scheduler',
+                                                     choices=['CosineAnnealingLR', 'CosineAnnealingWarmRestarts'])
+        cosine_max_t_hp = CS.UniformIntegerHyperparameter(name='cosine_max_t', lower=50, upper=300, default_value=150)
+        cosine_warm_hp = CS.UniformIntegerHyperparameter(name='warm_t_0', lower=50, upper=300, default_value=150)
+
         sgd_cond = CS.EqualsCondition(sgd_momentum_hp, optimizer_hp, 'SGD')
         rms_cond1 = CS.EqualsCondition(rms_momentum_hp, optimizer_hp, 'RMSprop')
         rms_cond2 = CS.EqualsCondition(rms_alpha_hp, optimizer_hp, 'RMSprop')
-        cs.add_hyperparameters([lr_hp, optimizer_hp, sgd_momentum_hp,rms_momentum_hp, rms_alpha_hp])
-        cs.add_conditions([sgd_cond, rms_cond1, rms_cond2])
+        cosine_warm_cond = CS.EqualsCondition(cosine_warm_hp, scheduler_hp, 'CosineAnnealingWarmRestarts')
+        cosine_cond = CS.EqualsCondition(cosine_max_t_hp, scheduler_hp, 'CosineAnnealingLR')
+        cs.add_hyperparameters([lr_hp, optimizer_hp, sgd_momentum_hp, rms_momentum_hp,
+                                rms_alpha_hp, scheduler_hp, cosine_max_t_hp, cosine_warm_hp])
+        cs.add_conditions([sgd_cond, rms_cond1, rms_cond2, cosine_cond, cosine_warm_cond])
         # END TODO ################
         return cs
 
@@ -124,6 +132,11 @@ class PyTorchWorker(Worker):
         else:
             optimizer = torch.optim.SGD(train_params, lr=config['lr'], momentum=config['sgd_momentum'])
 
+        if config['scheduler'] == 'CosineAnnealingLR':
+            scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, config['cosine_max_t'])
+        else:
+            scheduler = torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(optimizer, config['warm_t_0'])
+
         logging.info('Model being trained:')
         for epoch in range(int(budget)):
             loss = 0
@@ -134,6 +147,7 @@ class PyTorchWorker(Worker):
                 loss = train_criterion(output, y)
                 loss.backward()
                 optimizer.step()
+                scheduler.step()
 
         train_accuracy = self.evaluate_accuracy(model, train_loader)
         validation_accuracy = self.evaluate_accuracy(model, val_loader)
