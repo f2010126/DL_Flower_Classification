@@ -1,3 +1,5 @@
 .idea
 dataset
 src/models/default_model_*
+src/__pycache__
+src/eval/__pycache__
