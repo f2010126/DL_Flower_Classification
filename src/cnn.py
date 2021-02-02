@@ -33,6 +33,9 @@ class SampleModel(nn.Module):
         x = self.fc2(x)
         return x
 
+    def param_to_train(self):
+        return self.parameters()
+
 
 class PreTrainedVGG(nn.Module):
 

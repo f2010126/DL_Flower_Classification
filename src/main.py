@@ -4,7 +4,6 @@ import logging
 import time
 import numpy as np
 
-
 import torchvision.transforms as transforms
 from torch.utils.data import DataLoader, Subset, ConcatDataset
 from torchsummary import summary
@@ -18,19 +17,6 @@ from src.data_augmentations import *
 import matplotlib.pyplot as plt
 import torchvision
 import copy
-
-
-def imshow(inp, title=None):
-    """Imshow for tensor"""
-    inp = inp.numpy().transpose((1, 2, 0))
-    mean = np.array([0.485, 0.456, 0.406])
-    std = np.array([0.229, 0.224, 0.225])
-    inp = std * inp + mean
-    inp = np.clip(inp, 0, 1)
-    plt.imshow(inp)
-    if title is not None:
-        plt.title(title)
-    plt.pause(0.001)
 
 
 def main(data_dir,
@@ -96,12 +82,6 @@ def main(data_dir,
                                 batch_size=batch_size,
                                 shuffle=False)
 
-    # Get a batch of training data
-    inputs, classes = next(iter(train_loader))
-    # Make a grid from batch
-    out = torchvision.utils.make_grid(inputs)
-    imshow(out, title=[train_data.classes[x] for x in classes])
-
     model = torch_model(input_shape=input_shape,
                         num_classes=len(train_data.classes)).to(device)
 
@@ -150,15 +130,11 @@ def main(data_dir,
         torch.save(model.state_dict(), save_model_str)
 
     if not use_all_data_to_train:
-        logging.info('Accuracy at each epoch: ' + str(score))
-        logging.info('Mean of accuracies across all epochs: ' + str(100*np.mean(score))+'%')
-        logging.info('Accuracy of model at final epoch: ' + str(100*score[-1])+'%')
+        logging.info('Accuracy of model at final epoch: ' + str(100 * score[-1]) + '%')
 
 
 if __name__ == '__main__':
     """
-    This is just an example of a training pipeline.
-
     Feel free to add or remove more arguments, change default values or hardcode parameters to use.
     """
     loss_dict = {'cross_entropy': torch.nn.CrossEntropyLoss}  # Feel free to add more
@@ -167,7 +143,7 @@ if __name__ == '__main__':
     cmdline_parser = argparse.ArgumentParser('DL WS20/21 Competition')
 
     cmdline_parser.add_argument('-m', '--model',
-                                default='FeatExtEfficientNet',
+                                default='SampleModel',
                                 help='Class name of model to train',
                                 type=str)
     cmdline_parser.add_argument('-e', '--epochs',
@@ -211,9 +187,9 @@ if __name__ == '__main__':
     # resize_and_colour_jitter
     # resize_to_128x128
     cmdline_parser.add_argument('-d', '--data-augmentation',
-                                default='efficientnet_augmentations',
+                                default='resize_and_colour_jitter',
                                 help='Data augmentation to apply to data before passing to the model.'
-                                + 'Must be available in data_augmentations.py')
+                                     + 'Must be available in data_augmentations.py')
     cmdline_parser.add_argument('-a', '--use-all-data-to-train',
                                 action='store_true',
                                 help='Uses the train, validation, and test data to train the model if enabled.')
