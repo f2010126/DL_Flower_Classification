@@ -15,6 +15,25 @@ from src.eval.evaluate import eval_fn, accuracy
 from src.training import train_fn
 from src.data_augmentations import *
 
+
+def set_up_data_aug(data_aug_train, data_aug_val):
+    if data_aug_train is None:
+        data_aug_train = transforms.ToTensor()
+    elif isinstance(data_aug_train, list):
+        data_aug_train = transforms.Compose(data_aug_train)
+    elif not isinstance(data_aug_train, transforms.Compose):
+        raise NotImplementedError
+    #  for Validation set
+    if data_aug_val is None:
+        data_aug_val = transforms.ToTensor()
+    elif isinstance(data_aug_val, list):
+        data_aug_val = transforms.Compose(data_aug_val)
+    elif not isinstance(data_aug_val, transforms.Compose):
+        raise NotImplementedError
+
+    return data_aug_train,data_aug_val
+
+
 def main(data_dir,
          torch_model,
          num_epochs=10,
@@ -23,6 +42,7 @@ def main(data_dir,
          train_criterion=torch.nn.CrossEntropyLoss,
          model_optimizer=torch.optim.Adam,
          data_augmentations=None,
+         data_augmentations_validation=None,
          save_model_str=None,
          use_all_data_to_train=False,
          exp_name=''):
@@ -37,23 +57,19 @@ def main(data_dir,
     :param data_augmentations: List of data augmentations to apply such as rescaling.
         (list[transformations], transforms.Composition[list[transformations]], None)
         If none only ToTensor is used
+    :param data_augmentations_validation: same as above.
     :return:
     """
 
     # Device configuration
     device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
-
-    if data_augmentations is None:
-        data_augmentations = transforms.ToTensor()
-    elif isinstance(data_augmentations, list):
-        data_augmentations = transforms.Compose(data_augmentations)
-    elif not isinstance(data_augmentations, transforms.Compose):
-        raise NotImplementedError
+    data_augmentations, data_augmentations_validation = set_up_data_aug(data_aug_train=data_augmentations,
+                                                                        data_aug_val=data_augmentations_validation)
 
     # Load the dataset
     train_data = ImageFolder(os.path.join(data_dir, 'train'), transform=data_augmentations)
-    val_data = ImageFolder(os.path.join(data_dir, 'val'), transform=data_augmentations)
-    test_data = ImageFolder(os.path.join(data_dir, 'test'), transform=data_augmentations)
+    val_data = ImageFolder(os.path.join(data_dir, 'val'), transform=data_augmentations_validation)
+    test_data = ImageFolder(os.path.join(data_dir, 'test'), transform=data_augmentations)  # <-- does this also need  to have aug??
 
     channels, img_height, img_width = train_data[0][0].shape
 
@@ -176,6 +192,10 @@ if __name__ == '__main__':
                                 default='resize_and_colour_jitter',
                                 help='Data augmentation to apply to data before passing to the model.'
                                 + 'Must be available in data_augmentations.py')
+    cmdline_parser.add_argument('-dv', '--data-augmentation-validation',
+                                default='resize_and_colour_jitter',
+                                help='Data augmentation to apply to data before passing to the model.'
+                                     + 'Must be available in data_augmentations.py')
     cmdline_parser.add_argument('-a', '--use-all-data-to-train',
                                 action='store_true',
                                 help='Uses the train, validation, and test data to train the model if enabled.')
@@ -197,7 +217,8 @@ if __name__ == '__main__':
         learning_rate=args.learning_rate,
         train_criterion=loss_dict[args.training_loss],
         model_optimizer=opti_dict[args.optimizer],
-        data_augmentations=eval(args.data_augmentation),  # Check data_augmentations.py for sample augmentations
+        data_augmentations=eval(args.data_augmentation),
+        data_augmentations_validation= eval(args.data_augmentation_validation),# Check data_augmentations.py for sample augmentations
         save_model_str=args.model_path,
         exp_name=args.exp_name,
         use_all_data_to_train=args.use_all_data_to_train
