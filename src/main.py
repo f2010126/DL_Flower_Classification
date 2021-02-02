@@ -15,26 +15,11 @@ from src.eval.evaluate import eval_fn, accuracy
 from src.training import train_fn
 from src.data_augmentations import *
 
-import matplotlib.pyplot as plt
-import torchvision
-
-def imshow(inp, title=None):
-    """Imshow for tensor"""
-    inp = inp.numpy().transpose((1, 2, 0))
-    mean = np.array([0.485, 0.456, 0.406])
-    std = np.array([0.229, 0.224, 0.225])
-    inp = std * inp + mean
-    inp = np.clip(inp, 0, 1)
-    plt.imshow(inp)
-    if title is not None:
-        plt.title(title)
-    plt.pause(0.001)
-
 def main(data_dir,
          torch_model,
          num_epochs=10,
          batch_size=50,
-         learning_rate=0.01,
+         learning_rate=0.001,
          train_criterion=torch.nn.CrossEntropyLoss,
          model_optimizer=torch.optim.Adam,
          data_augmentations=None,
@@ -78,7 +63,7 @@ def main(data_dir,
     # instantiate training criterion
     train_criterion = train_criterion().to(device)
     score = []
-    # Loader returns -> [batch, channel, height, width]
+
     if use_all_data_to_train:
         train_loader = DataLoader(dataset=ConcatDataset([train_data, val_data, test_data]),
                                   batch_size=batch_size,
@@ -91,13 +76,6 @@ def main(data_dir,
         val_loader = DataLoader(dataset=val_data,
                                  batch_size=batch_size,
                                  shuffle=False)
-
-
-    # Get a batch of training data
-    inputs, classes = next(iter(train_loader))
-    # Make a grid from batch
-    out = torchvision.utils.make_grid(inputs)
-    imshow(out, title=[train_data.classes[x] for x in classes])
 
     model = torch_model(input_shape=input_shape,
                         num_classes=len(train_data.classes)).to(device)
@@ -153,15 +131,15 @@ if __name__ == '__main__':
     cmdline_parser = argparse.ArgumentParser('DL WS20/21 Competition')
 
     cmdline_parser.add_argument('-m', '--model',
-                                default='SmallCNN4',
+                                default='SampleModel',
                                 help='Class name of model to train',
                                 type=str)
     cmdline_parser.add_argument('-e', '--epochs',
-                                default=15,
+                                default=50,
                                 help='Number of epochs',
                                 type=int)
     cmdline_parser.add_argument('-b', '--batch_size',
-                                default=20,
+                                default=282,
                                 help='Batch size',
                                 type=int)
     cmdline_parser.add_argument('-D', '--data_dir',
@@ -194,10 +172,8 @@ if __name__ == '__main__':
                                 default='default',
                                 help='Name of this experiment',
                                 type=str)
-    # resize_and_colour_jitter
-    # resize_to_128x128
     cmdline_parser.add_argument('-d', '--data-augmentation',
-                                default='custom_augment',
+                                default='resize_and_colour_jitter',
                                 help='Data augmentation to apply to data before passing to the model.'
                                 + 'Must be available in data_augmentations.py')
     cmdline_parser.add_argument('-a', '--use-all-data-to-train',
