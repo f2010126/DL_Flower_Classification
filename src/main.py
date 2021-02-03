@@ -3,6 +3,7 @@ import argparse
 import logging
 import time
 import numpy as np
+import copy
 
 import torch
 import torchvision.transforms as transforms
@@ -75,7 +76,7 @@ def main(data_dir,
     train_data = ImageFolder(os.path.join(data_dir, 'train'), transform=data_augmentations)
     val_data = ImageFolder(os.path.join(data_dir, 'val'), transform=data_augmentations_validation)
     test_data = ImageFolder(os.path.join(data_dir, 'test'),
-                            transform=data_augmentations)  # <-- does this also need  to have aug??
+                            transform=data_augmentations_validation)
 
     channels, img_height, img_width = train_data[0][0].shape
 
@@ -101,6 +102,9 @@ def main(data_dir,
 
     model = torch_model(input_shape=input_shape,
                         num_classes=len(train_data.classes)).to(device)
+    # save best weights
+    best_model_wts = copy.deepcopy(model.state_dict())
+    best_score = 0.0
     train_params = model.param_to_train()
     # instantiate optimizer and scheduler
     # TODO: play with this
@@ -136,7 +140,21 @@ def main(data_dir,
             test_score = eval_fn(model, val_loader, device)
             logging.info('Validation accuracy: %f', test_score)
             score.append(test_score)
+            # update weights for best accuracy
+            if test_score > best_score:
+                best_score = test_score
+                best_model_wts = copy.deepcopy(model.state_dict())
+        else:
+            # use the best train score. what else?
+            if train_score > best_score:
+                best_score = train_score
+                best_model_wts = copy.deepcopy(model.state_dict())
 
+        scheduler.step()
+
+    # save best weighst to model
+    print(f"best score: {best_score}")
+    model.load_state_dict(best_model_wts)
     if save_model_str:
         # Save the model checkpoint can be restored via "model = torch.load(save_model_str)"
         model_save_dir = os.path.join(os.getcwd(), save_model_str)
