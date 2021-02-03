@@ -157,7 +157,7 @@ def main(data_dir,
 
         scheduler.step()
 
-    # save best weighst to model
+    # save best weights to model
     print(f"best score: {best_score}")
     model.load_state_dict(best_model_wts)
     if save_model_str:
