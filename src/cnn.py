@@ -2,6 +2,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from torchvision import models
 
 import efficientnet_pytorch
 # from efficientnet_pytorch import EfficientNet
@@ -98,3 +99,53 @@ class FeatExtEfficientNetB4(nn.Module):
         x = self.efficient._dropout(x)
         x = self.classifier_layer(x)
         return x
+
+class FeatExtSqueeze(nn.Module):
+    def __init__(self, input_shape=(3, 224, 224), num_classes=10, extract_features=True):
+        super(FeatExtSqueeze, self).__init__()
+        self.squeeze = models.squeezenet1_1(True)
+        self.extract_features = extract_features
+        self.disable_gradients(self.squeeze)
+        self.squeeze.classifier[1] = nn.Conv2d(512, num_classes, kernel_size=(1,1), stride=(1,1))
+        self.squeeze.num_classes = num_classes
+
+    def disable_gradients(self, model) -> None:
+        """
+        Freezes the layers of a model
+        Args:
+            model: The model with the layers to freeze
+        Returns:
+            None
+        """
+        # Iterate over model parameters and disable requires_grad
+        # This is how we "freeze" these layers (their weights do no change during training)
+        if self.extract_features:
+            for param in model.parameters():
+                param.requires_grad = False
+
+    def param_to_train(self):
+        """
+                Feature extraction
+                Args:
+                Returns:
+                    None
+        """
+        params_to_update = []
+        if self.extract_features:
+            for name, param in self.squeeze.named_parameters():
+                if param.requires_grad:
+                    params_to_update.append(param)
+        else:
+            params_to_update = self.squeeze.parameters()
+        return params_to_update
+
+    def forward(self, x) -> torch.Tensor:
+        """
+                Forward pass
+                Args:
+                    x: data
+                Returns:
+                    classification
+        """
+        return self.squeeze(x)
+
