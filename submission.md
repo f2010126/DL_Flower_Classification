@@ -27,11 +27,11 @@ Fast Networks Track -
 Large Networks Track -
 
 Command to train
-EfficientNet
-python -m src.main --model --exp_name effnetb4 FeatExtEfficientNetB4 --epochs 1 --batch_size 20 --data-augmentation efficientnet_augmentations --data-augmentation-validation efficientnet_augmentations_valid --optimizer sgd --opti_momentum 0.7 --opti_alpha 0.7 --scheduler cosine --t_max 100 --t_0 100
+EfficientNet with hpo params added
+python -m src.main --model --exp_name effnetb4 FeatExtEfficientNetB4 --epochs 1 --batch_size 20 --data-augmentation efficientnet_augmentations --data-augmentation-validation efficientnet_augmentations_valid --optimizer rms --learning_rate 0.006708615356600079 --opti_momentum 0.6417581190040514 --opti_alpha 0.3821706684860047 --scheduler cosine_warm --t_max 100 --t_0 95
 
 SqueezeNet with hpo params added
-python -m src.main --model FeatExtSqueeze --exp_name squeezenet --epochs 1 --batch_size 20 --data-augmentation pretrain_augmentations --data-augmentation-validation validation_augmentations --optimizer rms --opti_momentum 0.39423885159393096 --opti_alpha 0.30882554552480584 --scheduler cosine_warm --t_max 100 --t_0 96
+python -m src.main --model FeatExtSqueeze --exp_name squeezenet --epochs 1 --batch_size 20 --data-augmentation pretrain_augmentations --data-augmentation-validation validation_augmentations --optimizer rms --learning_rate 0.0004766109491313375 --opti_momentum 0.39423885159393096 --opti_alpha 0.30882554552480584 --scheduler cosine_warm --t_max 100 --t_0 96
 
 Resnet50
 python -m src.main --model FeatExtResnet50 --exp_name resnet50 --epochs 1 --batch_size 20 --data-augmentation pretrain_augmentations --data-augmentation-validation validation_augmentations --optimizer rms --opti_momentum 0.39423885159393096 --opti_alpha 0.30882554552480584 --scheduler cosine_warm --t_max 100 --t_0 96
