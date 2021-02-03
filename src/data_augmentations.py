@@ -29,6 +29,11 @@ pretrain_augmentations = transforms.Compose([
                          std=[0.229, 0.224, 0.225])
 ])
 
+# for the 224 i/p size
+validation_augmentations = transforms.Compose([
+    transforms.Resize((224, 224)),
+    transforms.ToTensor()])
+
 pretrain_augmentations_alt = transforms.Compose([transforms.Resize((224, 224)),
                                                  transforms.Normalize(mean=[0.4920, 0.4749, 0.3117],
                                                                       std=[0.2767, 0.2526, 0.2484])])
