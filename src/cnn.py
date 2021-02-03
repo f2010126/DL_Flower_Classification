@@ -112,6 +112,9 @@ class Mac_Graph(nn.Module):
         ###############
         self.graph = MacroGraph(config_a, config_b)
 
+    def forward(self, x):
+        return self.graph(x)
+
     def param_to_train(self):
         # TODO: no feat ext?
         return self.graph.parameters()

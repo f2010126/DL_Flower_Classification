@@ -111,9 +111,10 @@ def main(data_dir,
     out = torchvision.utils.make_grid(inputs)
     imshow(out, title=[train_data.classes[x] for x in classes])
 
-    model = set_mac_graph()
-    # model = torch_model(input_shape=input_shape,
-    #                     num_classes=len(train_data.classes)).to(device)
+    model = torch_model(input_shape=input_shape,
+                        num_classes=len(train_data.classes)).to(device)
+    train_params = model.param_to_train()
+    best_score = 0.0
 
     # instantiate optimizer
     # optimizer = model_optimizer(train_params, lr=learning_rate)
@@ -177,7 +178,7 @@ if __name__ == '__main__':
     cmdline_parser = argparse.ArgumentParser('DL WS20/21 Competition')
 
     cmdline_parser.add_argument('-m', '--model',
-                                default='SmallCNN4',
+                                default='Mac_Graph',
                                 help='Class name of model to train',
                                 type=str)
     cmdline_parser.add_argument('-e', '--epochs',
