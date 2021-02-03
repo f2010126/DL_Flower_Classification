@@ -38,7 +38,7 @@ def train_fn(model, optimizer, criterion, loader, device, train=True):
         losses.update(loss.item(), n)
         score.update(acc.item(), n)
 
-        t.set_description('(=> Training) Loss: {:.4f}'.format(losses.avg))
+        # t.set_description('(=> Training) Loss: {:.4f}'.format(losses.avg))
 
     time_train += time.time() - time_begin
     print('training time: ' + str(time_train))
