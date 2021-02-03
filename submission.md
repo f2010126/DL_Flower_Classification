@@ -14,7 +14,7 @@ Large Networks Track -
         which stores the weights used to give the highest test score in the given epochs.
     3. Added one more optimiser, 2 schedulers and related parameters.
     4. Added files for hyperparameter optimisation using BOHB
-    5. Ran top 3 models for as long as possible. Selected the one with best metrics. 
+    5. Ran top 3 models for as long as possible. Selected the one with the best metrics. 
 
 
 ##### Command to train your model from scratch
