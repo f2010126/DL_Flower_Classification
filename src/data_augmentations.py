@@ -46,9 +46,9 @@ pretrain_augmentations_alt = transforms.Compose([transforms.Resize((224, 224)),
 #                          std=[0.2767, 0.2526, 0.2484])
 #     ])
 
-# TODO: CALCULATE THE MEAN AND SD
+# TODO: CALCULATE THE MEAN AND SD B4 needs 380
 efficientnet_augmentations = transforms.Compose([
-    transforms.Resize((299, 299)),
+    transforms.Resize((380, 380)),
     transforms.RandomResizedCrop(size=315, scale=(0.95, 1.0)),
     transforms.RandomRotation(degrees=10),
     transforms.RandomHorizontalFlip(),
@@ -74,6 +74,7 @@ googlenet_augmentation = transforms.Compose([
     transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
 ])
 
+# B4 needs 380
 efficientnet_augmentations_valid = transforms.Compose([
-    transforms.Resize((299, 299)),
+    transforms.Resize((380, 380)),
     transforms.ToTensor(),])

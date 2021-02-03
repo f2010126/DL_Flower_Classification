@@ -379,7 +379,7 @@ class FeatExtEfficientNet(nn.Module):
 
 class FeatExtEfficientNetB4(nn.Module):
 
-    def __init__(self, input_shape=(3, 224, 224), num_classes=10, extract_features=True):
+    def __init__(self, input_shape=(3, 380, 380), num_classes=10, extract_features=True):
         super(FeatExtEfficientNetB4, self).__init__()
         self.efficient = efficientnet_pytorch.EfficientNet.from_pretrained('efficientnet-b4')
         self.extract_features = True
