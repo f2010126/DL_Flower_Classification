@@ -33,5 +33,5 @@ python -m src.main --model --exp_name effnetb4 FeatExtEfficientNetB4 --epochs 1 
 SqueezeNet with hpo params added
 python -m src.main --model FeatExtSqueeze --exp_name squeezenet --epochs 1 --batch_size 20 --data-augmentation pretrain_augmentations --data-augmentation-validation validation_augmentations --optimizer rms --learning_rate 0.0004766109491313375 --opti_momentum 0.39423885159393096 --opti_alpha 0.30882554552480584 --scheduler cosine_warm --t_max 100 --t_0 96
 
-Resnet50
-python -m src.main --model FeatExtResnet50 --exp_name resnet50 --epochs 1 --batch_size 20 --data-augmentation pretrain_augmentations --data-augmentation-validation validation_augmentations --optimizer rms --opti_momentum 0.39423885159393096 --opti_alpha 0.30882554552480584 --scheduler cosine_warm --t_max 100 --t_0 96
+Resnet50 with hpo params added
+python -m src.main --model FeatExtResnet50 --exp_name resnet50 --epochs 1 --batch_size 20 --data-augmentation pretrain_augmentations --data-augmentation-validation validation_augmentations --optimizer rms --learning_rate 0.0007048424134958733 --opti_momentum 0.7485456269263905 --opti_alpha  0.4289551813622236 --scheduler cosine --t_max 122 --t_0 96
