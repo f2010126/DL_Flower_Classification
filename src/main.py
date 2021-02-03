@@ -101,7 +101,7 @@ def main(data_dir,
 
     model = torch_model(input_shape=input_shape,
                         num_classes=len(train_data.classes)).to(device)
-    train_params = model.params_to_train()
+    train_params = model.param_to_train()
     # instantiate optimizer and scheduler
     # TODO: play with this
     print(f"optimiser and scheduler details- {model_schedule}/{model_optimizer}/{alpha}/{momentum}/{t_0}/{t_max}")

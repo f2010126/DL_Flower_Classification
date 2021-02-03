@@ -1,7 +1,10 @@
 """ File with CNN models. Add your custom CNN model here. """
-
+import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
+import efficientnet_pytorch
+# from efficientnet_pytorch import EfficientNet
 
 
 class SampleModel(nn.Module):
@@ -31,5 +34,67 @@ class SampleModel(nn.Module):
 
         return x
 
-    def params_to_train(self):
+    def param_to_train(self):
         return self.parameters()
+
+class FeatExtEfficientNetB4(nn.Module):
+
+    def __init__(self, input_shape=(3, 380, 380), num_classes=10, extract_features=True):
+        super(FeatExtEfficientNetB4, self).__init__()
+        self.efficient = efficientnet_pytorch.EfficientNet.from_pretrained('efficientnet-b4')
+        self.extract_features = True
+        self.disable_gradients(self.efficient) # freeze model
+        self.classifier_layer = nn.Sequential(
+            nn.Linear(1792, 512),
+            nn.BatchNorm1d(512),
+            nn.Dropout(0.2),
+            nn.Linear(512, 256),
+            nn.Linear(256, num_classes)
+        )
+
+
+    def disable_gradients(self, model) -> None:
+        """
+        Freezes the layers of a model
+        Args:
+            model: The model with the layers to freeze
+        Returns:
+            None
+        """
+        # Iterate over model parameters and disable requires_grad
+        # This is how we "freeze" these layers (their weights do no change during training)
+        if self.extract_features:
+            for param in model.parameters():
+                param.requires_grad = False
+
+    def param_to_train(self):
+        """
+                Feature extraction
+                Args:
+                Returns:
+                    None
+        """
+        params_to_update = []
+        if self.extract_features:
+            for name, param in self.efficient.named_parameters():
+                if param.requires_grad:
+                    params_to_update.append(param)
+            params_to_update.extend(self.classifier_layer.parameters())
+        else:
+            params_to_update = self.classifier_layer.parameters()
+        return params_to_update
+
+    def forward(self, x) -> torch.Tensor:
+        """
+                Forward pass
+                Args:
+                    x: data
+                Returns:
+                    classification
+        """
+        x = self.efficient.extract_features(x)
+        x = self.efficient._avg_pooling(x)
+        x = x.flatten(start_dim=1)
+        x = self.efficient._dropout(x)
+        x = self.classifier_layer(x)
+        return x
