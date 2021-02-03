@@ -4,6 +4,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torchvision import models
 
+from mac_graph import *
+
 
 class SampleModel(nn.Module):
     """
@@ -97,3 +99,19 @@ class SmallCNN4(nn.Module):
         x = F.relu(x)
         x = self.fc2(x)
         return x
+
+
+class Mac_Graph(nn.Module):
+    def __init__(self, input_shape=(3, 64, 64), num_classes=10):
+        super(Mac_Graph, self).__init__()
+        # TODO: shift and make it random
+        cell_a_space = CellA.get_configuration_space()
+        cell_b_space = CellB.get_configuration_space()
+        config_a = cell_a_space.sample_configuration()
+        config_b = cell_b_space.sample_configuration()
+        ###############
+        self.graph = MacroGraph(config_a, config_b)
+
+    def param_to_train(self):
+        # TODO: no feat ext?
+        return self.graph.parameters()

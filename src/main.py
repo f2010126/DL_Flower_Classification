@@ -42,11 +42,6 @@ def set_mac_graph():
     model = MacroGraph(config_a, config_b)
     return model
 
-
-
-
-
-
 def main(data_dir,
          torch_model,
          num_epochs=10,
