@@ -55,7 +55,7 @@ def main(data_dir,
         raise NotImplementedError
 
     # Load the dataset
-    data_dir = data_dir + '/tiny'
+    # data_dir = data_dir + '/tiny'
     train_data = ImageFolder(os.path.join(data_dir, 'train'), transform=data_augmentations)
     val_data = ImageFolder(os.path.join(data_dir, 'val'), transform=data_augmentations)
     test_data = ImageFolder(os.path.join(data_dir, 'test'), transform=data_augmentations)

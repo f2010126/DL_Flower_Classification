@@ -3,6 +3,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torchvision import models
+import efficientnet_pytorch
 from efficientnet_pytorch import EfficientNet
 
 
@@ -57,7 +58,11 @@ class FeatExtResnet(nn.Module):
         self.extract_features = extract_features
         self.disable_gradients(self.resnet)
         num_ftrs = self.resnet.fc.in_features
-        self.resnet.fc = nn.Linear(num_ftrs, num_classes)
+        self.resnet.fc = nn.Sequential(
+            nn.Dropout(0.5),
+            nn.Linear(num_ftrs, num_classes)
+        )
+        # self.resnet.fc = nn.Linear(num_ftrs, num_classes)
 
     def disable_gradients(self, model) -> None:
         """
@@ -99,6 +104,111 @@ class FeatExtResnet(nn.Module):
         """
         return self.resnet(x)
 
+class FeatExtResnet34(nn.Module):
+    def __init__(self, input_shape=(3, 224, 224), num_classes=10, extract_features=True):
+        super(FeatExtResnet34, self).__init__()
+        self.resnet = models.resnet34(pretrained=True)
+        self.extract_features = extract_features
+        self.disable_gradients(self.resnet)
+        num_ftrs = self.resnet.fc.in_features
+        self.resnet.fc = nn.Sequential(
+            nn.Dropout(0.5),
+            nn.Linear(num_ftrs, num_classes)
+        )
+        # self.resnet.fc = nn.Linear(num_ftrs, num_classes)
+
+    def disable_gradients(self, model) -> None:
+        """
+        Freezes the layers of a model
+        Args:
+            model: The model with the layers to freeze
+        Returns:
+            None
+        """
+        # Iterate over model parameters and disable requires_grad
+        # This is how we "freeze" these layers (their weights do no change during training)
+        if self.extract_features:
+            for param in model.parameters():
+                param.requires_grad = False
+
+    def param_to_train(self):
+        """
+                Feature extraction
+                Args:
+                Returns:
+                    None
+        """
+        params_to_update = []
+        if self.extract_features:
+            for name, param in self.resnet.named_parameters():
+                if param.requires_grad:
+                    params_to_update.append(param)
+        else:
+            params_to_update = self.resnet.parameters()
+        return params_to_update
+
+    def forward(self, x) -> torch.Tensor:
+        """
+                Forward pass
+                Args:
+                    x: data
+                Returns:
+                    classification
+        """
+        return self.resnet(x)
+
+class FeatExtResnet50(nn.Module):
+    def __init__(self, input_shape=(3, 224, 224), num_classes=10, extract_features=True):
+        super(FeatExtResnet50, self).__init__()
+        self.resnet = models.resnet50(pretrained=True)
+        self.extract_features = extract_features
+        self.disable_gradients(self.resnet)
+        num_ftrs = self.resnet.fc.in_features
+        self.resnet.fc = nn.Sequential(
+            nn.Dropout(0.5),
+            nn.Linear(num_ftrs, num_classes)
+        )
+        # self.resnet.fc = nn.Linear(num_ftrs, num_classes)
+
+    def disable_gradients(self, model) -> None:
+        """
+        Freezes the layers of a model
+        Args:
+            model: The model with the layers to freeze
+        Returns:
+            None
+        """
+        # Iterate over model parameters and disable requires_grad
+        # This is how we "freeze" these layers (their weights do no change during training)
+        if self.extract_features:
+            for param in model.parameters():
+                param.requires_grad = False
+
+    def param_to_train(self):
+        """
+                Feature extraction
+                Args:
+                Returns:
+                    None
+        """
+        params_to_update = []
+        if self.extract_features:
+            for name, param in self.resnet.named_parameters():
+                if param.requires_grad:
+                    params_to_update.append(param)
+        else:
+            params_to_update = self.resnet.parameters()
+        return params_to_update
+
+    def forward(self, x) -> torch.Tensor:
+        """
+                Forward pass
+                Args:
+                    x: data
+                Returns:
+                    classification
+        """
+        return self.resnet(x)
 
 class FeatExtDenseNet(nn.Module):
     def __init__(self, input_shape=(3, 224, 224), num_classes=10, extract_features=True):
@@ -154,7 +264,6 @@ class FeatExtDenseNet(nn.Module):
         """
         return self.densenet(x)
 
-
 class FeatExtSqueeze(nn.Module):
     def __init__(self, input_shape=(3, 224, 224), num_classes=10, extract_features=True):
         super(FeatExtSqueeze, self).__init__()
@@ -209,14 +318,17 @@ class FeatExtEfficientNet(nn.Module):
 
     def __init__(self, input_shape=(3, 224, 224), num_classes=10, extract_features=True):
         super(FeatExtEfficientNet, self).__init__()
-        self.efficient = EfficientNet.from_pretrained('efficientnet-b0')
-        self.extract_features = extract_features
-        # feat ext
-        # self.disable_gradients(self.efficient)
-        self.l1 = nn.Linear(1000, 256)
-        self.dropout = nn.Dropout(0.5)
-        self.l2 = nn.Linear(256, num_classes)  # 6 is number of classes
-        self.relu = nn.LeakyReLU()
+        self.efficient = efficientnet_pytorch.EfficientNet.from_pretrained('efficientnet-b0')
+        self.extract_features = True
+        self.disable_gradients(self.efficient) # freeze model
+        self.classifier_layer = nn.Sequential(
+            nn.Linear(1280, 512),
+            nn.BatchNorm1d(512),
+            nn.Dropout(0.2),
+            nn.Linear(512, 256),
+            nn.Linear(256, num_classes)
+        )
+
 
     def disable_gradients(self, model) -> None:
         """
@@ -244,8 +356,9 @@ class FeatExtEfficientNet(nn.Module):
             for name, param in self.efficient.named_parameters():
                 if param.requires_grad:
                     params_to_update.append(param)
+            params_to_update.extend(self.classifier_layer.parameters())
         else:
-            params_to_update = self.efficient.parameters()
+            params_to_update = self.classifier_layer.parameters()
         return params_to_update
 
     def forward(self, x) -> torch.Tensor:
@@ -256,24 +369,29 @@ class FeatExtEfficientNet(nn.Module):
                 Returns:
                     classification
         """
-        x = self.efficient(x)
-        x = x.view(x.size(0), -1) # flatten
-        x = self.dropout(self.relu(self.l1(x)))
-        x = self.l2(x)
+        x = self.efficient.extract_features(x)
+        x = self.efficient._avg_pooling(x)
+        x = x.flatten(start_dim=1)
+        x = self.efficient._dropout(x)
+        x = self.classifier_layer(x)
         return x
 
 
-# 5 million
-class FeatExtGoogLeNet(nn.Module):
+class FeatExtEfficientNetB4(nn.Module):
+
     def __init__(self, input_shape=(3, 224, 224), num_classes=10, extract_features=True):
-        super(FeatExtGoogLeNet, self).__init__()
-        self.google = models.googlenet(pretrained=True)
-        self.extract_features = extract_features
-        self.disable_gradients(self.google)
-        self.google.aux_logits = False
-        # Handle the primary net
-        num_ftrs = self.google.fc.in_features
-        self.google.fc = nn.Linear(num_ftrs, num_classes)
+        super(FeatExtEfficientNetB4, self).__init__()
+        self.efficient = efficientnet_pytorch.EfficientNet.from_pretrained('efficientnet-b4')
+        self.extract_features = True
+        self.disable_gradients(self.efficient) # freeze model
+        self.classifier_layer = nn.Sequential(
+            nn.Linear(1792, 512),
+            nn.BatchNorm1d(512),
+            nn.Dropout(0.2),
+            nn.Linear(512, 256),
+            nn.Linear(256, num_classes)
+        )
+
 
     def disable_gradients(self, model) -> None:
         """
@@ -298,11 +416,12 @@ class FeatExtGoogLeNet(nn.Module):
         """
         params_to_update = []
         if self.extract_features:
-            for name, param in self.google.named_parameters():
+            for name, param in self.efficient.named_parameters():
                 if param.requires_grad:
                     params_to_update.append(param)
+            params_to_update.extend(self.classifier_layer.parameters())
         else:
-            params_to_update = self.google.parameters()
+            params_to_update = self.classifier_layer.parameters()
         return params_to_update
 
     def forward(self, x) -> torch.Tensor:
@@ -313,7 +432,12 @@ class FeatExtGoogLeNet(nn.Module):
                 Returns:
                     classification
         """
-        return self.google(x)
+        x = self.efficient.extract_features(x)
+        x = self.efficient._avg_pooling(x)
+        x = x.flatten(start_dim=1)
+        x = self.efficient._dropout(x)
+        x = self.classifier_layer(x)
+        return x
 
 
 # 24 million
