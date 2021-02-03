@@ -59,11 +59,16 @@ def main(data_dir,
     :param batch_size: (int)
     :param learning_rate: model optimizer learning rate (float)
     :param train_criterion: Which loss to use during training (torch.nn._Loss)
-    :param model_optimizer: Which model optimizer to use during trainnig (torch.optim.Optimizer)
+    :param model_optimizer: Which model optimizer to use during training (torch.optim.Optimizer)
+    :param momentum: for RMSProp and SGD
+    :param alpha: for RMSProp
     :param data_augmentations: List of data augmentations to apply such as rescaling.
         (list[transformations], transforms.Composition[list[transformations]], None)
         If none only ToTensor is used
     :param data_augmentations_validation: same as above.
+    :param model_schedule: What scheduler to use
+    :param t_max: for Cosine Annealing
+    :param t_0: for Cosine with warm restart
     :return:
     """
 
