@@ -30,3 +30,6 @@ class SampleModel(nn.Module):
         x = self.fc2(x)
 
         return x
+
+    def params_to_train(self):
+        return self.parameters()

@@ -15,6 +15,11 @@ from src.eval.evaluate import eval_fn, accuracy
 from src.training import train_fn
 from src.data_augmentations import *
 
+loss_dict = {'cross_entropy': torch.nn.CrossEntropyLoss} # Feel free to add more
+opti_dict = {'sgd': torch.optim.SGD, 'adam': torch.optim.Adam, 'rms': torch.optim.RMSprop} # Feel free to add more
+scheduler_dict = {'cosine': torch.optim.lr_scheduler.CosineAnnealingLR,
+                 'cos_warm': torch.optim.lr_scheduler.CosineAnnealingWarmRestarts }
+
 
 def set_up_data_aug(data_aug_train, data_aug_val):
     if data_aug_train is None:
@@ -40,7 +45,12 @@ def main(data_dir,
          batch_size=50,
          learning_rate=0.001,
          train_criterion=torch.nn.CrossEntropyLoss,
-         model_optimizer=torch.optim.Adam,
+         model_optimizer='adam',
+         momentum = 0.9,
+         alpha= 0.99,
+         model_schedule = 'cosine',
+         t_0=150,
+         t_max=150,
          data_augmentations=None,
          data_augmentations_validation=None,
          save_model_str=None,
@@ -95,9 +105,22 @@ def main(data_dir,
 
     model = torch_model(input_shape=input_shape,
                         num_classes=len(train_data.classes)).to(device)
+    train_params = model.params_to_train()
+    # instantiate optimizer and scheduler
+    # TODO: play with this
+    print(f"optimiser and scheduler details- {model_schedule}/{model_optimizer}/{alpha}/{momentum}/{t_0}/{t_max}")
+    if model_optimizer == 'adam':
+        optimizer = torch.optim.Adam(train_params, lr=learning_rate)
+    elif model_optimizer == 'rms':
+        optimizer = torch.optim.RMSprop(train_params, lr=learning_rate, momentum=momentum,
+                                        alpha=alpha)
+    else:
+        optimizer = torch.optim.SGD(train_params, lr=learning_rate, momentum=momentum)
 
-    # instantiate optimizer
-    optimizer = model_optimizer(model.parameters(), lr=learning_rate)
+    if model_schedule == 'cosine':
+        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, t_max)
+    else:
+        scheduler = torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(optimizer, t_0)
 
     # Info about the model being trained
     # You can find the number of learnable parameters in the model here
@@ -142,7 +165,9 @@ if __name__ == '__main__':
     Feel free to add or remove more arguments, change default values or hardcode parameters to use.
     """
     loss_dict = {'cross_entropy': torch.nn.CrossEntropyLoss} # Feel free to add more
-    opti_dict = {'sgd': torch.optim.SGD, 'adam': torch.optim.Adam} # Feel free to add more
+    opti_dict = {'sgd': torch.optim.SGD, 'adam': torch.optim.Adam, 'rms': torch.optim.RMSprop} # Feel free to add more
+    scheduler_dict = {'cosine': torch.optim.lr_scheduler.CosineAnnealingLR,
+                 'cosine_warm': torch.optim.lr_scheduler.CosineAnnealingWarmRestarts }
 
     cmdline_parser = argparse.ArgumentParser('DL WS20/21 Competition')
 
@@ -176,6 +201,27 @@ if __name__ == '__main__':
                                 help='Which optimizer to use during training',
                                 choices=list(opti_dict.keys()),
                                 type=str)
+    cmdline_parser.add_argument('-om', '--opti_momentum',
+                                default=0.9,
+                                help='Momentum for SGD or RMSProp',
+                                type=float)
+    cmdline_parser.add_argument('-oa', '--opti_alpha',
+                                default=0.99,
+                                help='Alpha for RMSProp',
+                                type=float)
+    cmdline_parser.add_argument('-s', '--scheduler',
+                                default='cosine',
+                                help='Which scheduler to use during training',
+                                choices=list(scheduler_dict.keys()),
+                                type=str)
+    cmdline_parser.add_argument('-tm', '--t_max',
+                                default=150,
+                                help='T_max for CosineAnnealingLR',
+                                type=int)
+    cmdline_parser.add_argument('-to', '--t_0',
+                                default=150,
+                                help='T_0 for CosineAnnealingWarmRestarts',
+                                type=int)
     cmdline_parser.add_argument('-p', '--model_path',
                                 default='models',
                                 help='Path to store model',
@@ -193,7 +239,7 @@ if __name__ == '__main__':
                                 help='Data augmentation to apply to data before passing to the model.'
                                 + 'Must be available in data_augmentations.py')
     cmdline_parser.add_argument('-dv', '--data-augmentation-validation',
-                                default='resize_and_colour_jitter',
+                                default='resize_to_64x64',
                                 help='Data augmentation to apply to data before passing to the model.'
                                      + 'Must be available in data_augmentations.py')
     cmdline_parser.add_argument('-a', '--use-all-data-to-train',
@@ -216,7 +262,12 @@ if __name__ == '__main__':
         batch_size=args.batch_size,
         learning_rate=args.learning_rate,
         train_criterion=loss_dict[args.training_loss],
-        model_optimizer=opti_dict[args.optimizer],
+        model_optimizer=args.optimizer,
+        momentum=args.opti_momentum,
+        alpha = args.opti_alpha,
+        model_schedule = args.scheduler,
+        t_0 = args.t_0,
+        t_max = args.t_max,
         data_augmentations=eval(args.data_augmentation),
         data_augmentations_validation= eval(args.data_augmentation_validation),# Check data_augmentations.py for sample augmentations
         save_model_str=args.model_path,
