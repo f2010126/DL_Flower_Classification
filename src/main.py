@@ -15,11 +15,6 @@ from src.eval.evaluate import eval_fn, accuracy
 from src.training import train_fn
 from src.data_augmentations import *
 
-loss_dict = {'cross_entropy': torch.nn.CrossEntropyLoss} # Feel free to add more
-opti_dict = {'sgd': torch.optim.SGD, 'adam': torch.optim.Adam, 'rms': torch.optim.RMSprop} # Feel free to add more
-scheduler_dict = {'cosine': torch.optim.lr_scheduler.CosineAnnealingLR,
-                 'cos_warm': torch.optim.lr_scheduler.CosineAnnealingWarmRestarts }
-
 
 def set_up_data_aug(data_aug_train, data_aug_val):
     if data_aug_train is None:
@@ -36,7 +31,7 @@ def set_up_data_aug(data_aug_train, data_aug_val):
     elif not isinstance(data_aug_val, transforms.Compose):
         raise NotImplementedError
 
-    return data_aug_train,data_aug_val
+    return data_aug_train, data_aug_val
 
 
 def main(data_dir,
@@ -46,9 +41,9 @@ def main(data_dir,
          learning_rate=0.001,
          train_criterion=torch.nn.CrossEntropyLoss,
          model_optimizer='adam',
-         momentum = 0.9,
-         alpha= 0.99,
-         model_schedule = 'cosine',
+         momentum=0.9,
+         alpha=0.99,
+         model_schedule='cosine',
          t_0=150,
          t_max=150,
          data_augmentations=None,
@@ -79,7 +74,8 @@ def main(data_dir,
     # Load the dataset
     train_data = ImageFolder(os.path.join(data_dir, 'train'), transform=data_augmentations)
     val_data = ImageFolder(os.path.join(data_dir, 'val'), transform=data_augmentations_validation)
-    test_data = ImageFolder(os.path.join(data_dir, 'test'), transform=data_augmentations)  # <-- does this also need  to have aug??
+    test_data = ImageFolder(os.path.join(data_dir, 'test'),
+                            transform=data_augmentations)  # <-- does this also need  to have aug??
 
     channels, img_height, img_width = train_data[0][0].shape
 
@@ -100,8 +96,8 @@ def main(data_dir,
                                   batch_size=batch_size,
                                   shuffle=True)
         val_loader = DataLoader(dataset=val_data,
-                                 batch_size=batch_size,
-                                 shuffle=False)
+                                batch_size=batch_size,
+                                shuffle=False)
 
     model = torch_model(input_shape=input_shape,
                         num_classes=len(train_data.classes)).to(device)
@@ -153,9 +149,8 @@ def main(data_dir,
 
     if not use_all_data_to_train:
         logging.info('Accuracy at each epoch: ' + str(score))
-        logging.info('Mean of accuracies across all epochs: ' + str(100*np.mean(score))+'%')
-        logging.info('Accuracy of model at final epoch: ' + str(100*score[-1])+'%')
-
+        logging.info('Mean of accuracies across all epochs: ' + str(100 * np.mean(score)) + '%')
+        logging.info('Accuracy of model at final epoch: ' + str(100 * score[-1]) + '%')
 
 
 if __name__ == '__main__':
@@ -164,10 +159,10 @@ if __name__ == '__main__':
 
     Feel free to add or remove more arguments, change default values or hardcode parameters to use.
     """
-    loss_dict = {'cross_entropy': torch.nn.CrossEntropyLoss} # Feel free to add more
-    opti_dict = {'sgd': torch.optim.SGD, 'adam': torch.optim.Adam, 'rms': torch.optim.RMSprop} # Feel free to add more
+    loss_dict = {'cross_entropy': torch.nn.CrossEntropyLoss}  # Feel free to add more
+    opti_dict = {'sgd': torch.optim.SGD, 'adam': torch.optim.Adam, 'rms': torch.optim.RMSprop}  # Feel free to add more
     scheduler_dict = {'cosine': torch.optim.lr_scheduler.CosineAnnealingLR,
-                 'cosine_warm': torch.optim.lr_scheduler.CosineAnnealingWarmRestarts }
+                      'cosine_warm': torch.optim.lr_scheduler.CosineAnnealingWarmRestarts}
 
     cmdline_parser = argparse.ArgumentParser('DL WS20/21 Competition')
 
@@ -237,7 +232,7 @@ if __name__ == '__main__':
     cmdline_parser.add_argument('-d', '--data-augmentation',
                                 default='resize_and_colour_jitter',
                                 help='Data augmentation to apply to data before passing to the model.'
-                                + 'Must be available in data_augmentations.py')
+                                     + 'Must be available in data_augmentations.py')
     cmdline_parser.add_argument('-dv', '--data-augmentation-validation',
                                 default='resize_to_64x64',
                                 help='Data augmentation to apply to data before passing to the model.'
@@ -264,12 +259,13 @@ if __name__ == '__main__':
         train_criterion=loss_dict[args.training_loss],
         model_optimizer=args.optimizer,
         momentum=args.opti_momentum,
-        alpha = args.opti_alpha,
-        model_schedule = args.scheduler,
-        t_0 = args.t_0,
-        t_max = args.t_max,
+        alpha=args.opti_alpha,
+        model_schedule=args.scheduler,
+        t_0=args.t_0,
+        t_max=args.t_max,
         data_augmentations=eval(args.data_augmentation),
-        data_augmentations_validation= eval(args.data_augmentation_validation),# Check data_augmentations.py for sample augmentations
+        data_augmentations_validation=eval(args.data_augmentation_validation),
+        # Check data_augmentations.py for sample augmentations
         save_model_str=args.model_path,
         exp_name=args.exp_name,
         use_all_data_to_train=args.use_all_data_to_train
